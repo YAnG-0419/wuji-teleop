@@ -1,0 +1,51 @@
+{
+  "hardware": {
+    "source": "li-agent-mono/ros2/src/vendor/wuji_hand_driver",
+    "commit": "d96740b7afdf32e7e8be69841a870464e005e0bb",
+    "original_provenance": "hardware/wuji_hand_driver/SOURCE.json",
+    "license": "Apache-2.0",
+    "changes": [
+      "Pin SDK 2026.10.12 for Python 3.8 and Ubuntu 20.04",
+      "Remove Python 3.10-only strict zip",
+      "Add default-disabled output, enable service, source timestamp validation and feedback/command watchdogs"
+    ]
+  },
+  "retarget": {
+    "source": "gello_upper_body_teleop/adapters/wuji",
+    "commit": "825a64c8d76844bfabc553516cd22bb7aba6e1f2",
+    "upstream_retarget_revision": "66693c2",
+    "license": "MIT; see licenses/WUJI_RETARGET_MIT and licenses/WUJI_DESCRIPTION",
+    "changes": [
+      "Keep Hand 2 beta models and both MANUS configurations",
+      "Pinocchio 2.7 compatibility: Frame.parent rather than Frame.parentJoint",
+      "Named conversion to firmware finger-major order",
+      "Bound float32 roundoff within 1e-6 to declared joint limits"
+    ]
+  },
+  "manus": {
+    "source": "gello_upper_body_teleop/adapters/manus and vendor/manus_sdk",
+    "commit": "825a64c8d76844bfabc553516cd22bb7aba6e1f2",
+    "bridge_license": "MIT; see licenses/GELLO_MIT",
+    "sdk_license": "proprietary; see teleop/manus_bridge/vendor/manus_sdk/LICENSE.vendor",
+    "sdk_version": "MANUS CoreSDK 3.1.1 Linux x86-64",
+    "changes": [
+      "Extract ctypes frame reader and canonical_landmarks only",
+      "Relocate native CMake vendor path",
+      "Do not copy original operator calibration files"
+    ]
+  },
+  "control": {
+    "source": "Standalone implementation in this project",
+    "behavior": "Forward the selected valid target unchanged; no command slew-rate limit. Program interpolation remains in WujiClient.move_to; teleop low-pass filtering remains in retarget."
+  },
+  "teleop_switch": {
+    "source": "Standalone implementation in this project",
+    "behavior": "Terminal s/x/q switch and one-shot on/off commands reuse existing control and hardware services; no SDK access or motion algorithm is added."
+  },
+  "wuji_sdk": {
+    "distribution": "wuji-sdk==2026.10.12",
+    "source": "https://pypi.org/project/wuji-sdk/2026.10.12/",
+    "license": "MIT",
+    "distribution_in_tree": "No; downloaded and hash-locked by Pixi"
+  }
+}

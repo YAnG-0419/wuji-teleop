@@ -1,0 +1,20 @@
+{
+  "repository": "litchi/litchi_hardware (gitlab.litchibot.internal:2222)",
+  "commit": "c7fad71090a9961d8fc919c01a3b2b62ec1625da",
+  "package": "wuji_hand_driver",
+  "source_path": "ros2/src/wuji_hand/wuji_hand_driver",
+  "files": [
+    "README.md",
+    "config/wuji_hand_2.yaml",
+    "launch/wuji_hand_2.launch.py",
+    "package.xml",
+    "resource/wuji_hand_driver",
+    "setup.cfg",
+    "setup.py",
+    "test/test_driver.py",
+    "test/test_package_metadata.py",
+    "wuji_hand_driver/__init__.py",
+    "wuji_hand_driver/driver.py",
+    "wuji_hand_driver/node.py"
+  ]
+}

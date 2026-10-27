@@ -1,0 +1,12 @@
+/**:
+  ros__parameters:
+    state_publish_rate_hz: 200.0
+    mit_kp: 3.0
+    mit_kd: 0.05
+    effort_limit: 1.5
+    auto_enable: false
+    command_timeout_sec: 0.3
+    feedback_timeout_sec: 0.25
+    enable_timeout_sec: 5.0
+    require_all_joints_online: true
+    enable_sdk_bridge: false

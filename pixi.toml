@@ -1,0 +1,37 @@
+[workspace]
+name = "wuji-teleop"
+version = "0.1.0"
+channels = ["conda-forge"]
+platforms = [{ platform = "linux-64", glibc = "2.31" }]
+
+[dependencies]
+python = "3.8.*"
+numpy = "1.24.*"
+scipy = "1.10.*"
+pyyaml = "6.*"
+pytest = "8.3.*"
+setuptools = "75.3.*"
+pip = "24.3.*"
+cmake = ">=3.16,<4"
+ninja = "*"
+cxx-compiler = "1.*"
+sysroot_linux-64 = "2.17.*"
+netifaces = "0.11.*"
+empy = "3.3.*"
+lark-parser = "0.12.*"
+lxml = "4.9.*"
+
+[pypi-dependencies]
+wuji-sdk = "==2026.10.12"
+pin = "==2.7.0"
+nlopt = "==2.7.1"
+colcon-common-extensions = ">=0.3,<0.4"
+
+[activation]
+scripts = ["tools/activate.sh"]
+
+[tasks]
+test = "python -m pytest tests hardware/wuji_hand_driver/test -q"
+build = "bash tools/build_ros.sh"
+check-sdk = "python tools/check_sdk.py"
+build-manus = "cmake -S teleop/manus_bridge -B build/manus_bridge -G Ninja && cmake --build build/manus_bridge"
