@@ -5,9 +5,6 @@ channels = ["conda-forge"]
 platforms = [{ platform = "linux-64", glibc = "2.31" }]
 
 [dependencies]
-python = "3.8.*"
-numpy = "1.24.*"
-scipy = "1.10.*"
 pyyaml = "6.*"
 pytest = "8.3.*"
 setuptools = "75.3.*"
@@ -30,8 +27,38 @@ colcon-common-extensions = ">=0.3,<0.4"
 [activation]
 scripts = ["tools/activate.sh"]
 
+[feature.foxy.dependencies]
+python = "3.8.*"
+numpy = "1.24.*"
+scipy = "1.10.*"
+
+[feature.foxy.activation.env]
+WUJI_ROS_DISTRO = "foxy"
+WUJI_PYTHON_VERSION = "3.8"
+WUJI_BUILD_BASE = "build"
+WUJI_INSTALL_BASE = "install"
+WUJI_LOG_BASE = "log"
+
+[feature.jazzy.dependencies]
+python = "3.12.*"
+numpy = "1.26.*"
+scipy = "1.12.*"
+
+[feature.jazzy.activation.env]
+WUJI_ROS_DISTRO = "jazzy"
+WUJI_PYTHON_VERSION = "3.12"
+WUJI_BUILD_BASE = "build/jazzy"
+WUJI_INSTALL_BASE = "install/jazzy"
+WUJI_LOG_BASE = "log/jazzy"
+
+[environments]
+default = ["foxy"]
+jazzy = ["jazzy"]
+
 [tasks]
 test = "python -m pytest tests hardware/wuji_hand_driver/test -q"
 build = "bash tools/build_ros.sh"
 check-sdk = "python tools/check_sdk.py"
-build-manus = "cmake -S teleop/manus_bridge -B build/manus_bridge -G Ninja && cmake --build build/manus_bridge"
+check-ros = "python tools/check_ros.py"
+test-ros = "bash tools/test_ros.sh"
+build-manus = "bash tools/build_manus.sh"

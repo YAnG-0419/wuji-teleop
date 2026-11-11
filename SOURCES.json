@@ -36,7 +36,7 @@
   },
   "control": {
     "source": "Standalone implementation in this project",
-    "behavior": "Forward the selected valid target unchanged; no command slew-rate limit. Program interpolation remains in WujiClient.move_to; teleop low-pass filtering remains in retarget."
+    "behavior": "Forward the selected valid target unchanged; no command slew-rate limit. Program interpolation remains in WujiClient.move_to; teleop low-pass filtering remains in retarget. Enable waits for fresh selected input before hardware enable; generation changes fence late results, and service timeouts complete on both Foxy and Jazzy."
   },
   "teleop_switch": {
     "source": "Standalone implementation in this project",
@@ -47,5 +47,9 @@
     "source": "https://pypi.org/project/wuji-sdk/2026.10.12/",
     "license": "MIT",
     "distribution_in_tree": "No; downloaded and hash-locked by Pixi"
+  },
+  "ros_environments": {
+    "source": "Standalone environment and build configuration in this project",
+    "behavior": "Default Foxy/Python 3.8 and Jazzy/Python 3.12 share source and SDK/retarget versions; ROS distribution/interpreter checks and separate Jazzy build/install/log outputs prevent ABI mixing."
   }
 }

@@ -1,4 +1,5 @@
 import json
+import math
 from pathlib import Path
 import time
 
@@ -18,7 +19,7 @@ class ControlNode(Node):
     def __init__(self):
         super().__init__("wuji_control")
         for name, value in (("side", "right"), ("source", "teleop"),
-                            ("rate_hz", 100.0), ("timeout", 0.25)):
+                            ("rate_hz", 100.0), ("timeout", 0.25), ("ready_timeout", 2.0)):
             self.declare_parameter(name, value)
         self.side = self.get_parameter("side").value
         self.names = joint_names(self.side)
@@ -27,6 +28,9 @@ class ControlNode(Node):
         limits = json.loads((share / "config/joint_limits.json").read_text())[self.side]
         self.motion = Motion(limits, timeout=self.get_parameter("timeout").value,
                              source=self.get_parameter("source").value)
+        self.ready_timeout = float(self.get_parameter("ready_timeout").value)
+        if not math.isfinite(self.ready_timeout) or self.ready_timeout <= 0:
+            raise ValueError("ready_timeout must be positive")
         rate = float(self.get_parameter("rate_hz").value)
         if not 0 < rate <= 200:
             raise ValueError("rate_hz must be in (0,200]")
@@ -63,11 +67,43 @@ class ControlNode(Node):
         except ValueError as error:
             self.get_logger().error(str(error))
 
+    async def _wait_ready(self, generation):
+        from rclpy.task import Future
+
+        future = Future(executor=self.executor)
+        deadline = time.monotonic() + self.ready_timeout
+
+        def poll():
+            if future.done():
+                return
+            if generation != self.generation:
+                future.set_exception(RuntimeError("enable cancelled by stop or source change"))
+                return
+            try:
+                self.motion.check_ready(time.monotonic())
+            except (RuntimeError, ValueError) as error:
+                if time.monotonic() >= deadline:
+                    future.set_exception(RuntimeError("waiting for fresh input timed out: " + str(error)))
+            else:
+                future.set_result(True)
+
+        timer = self.create_timer(0.01, poll)
+        try:
+            poll()
+            await future
+        finally:
+            self.destroy_timer(timer)
+
     async def _hardware(self, enabled):
         if not self.hardware.service_is_ready():
             raise RuntimeError("hardware enable service unavailable")
         future = self.hardware.call_async(SetBool.Request(data=enabled))
-        timer = self.create_timer(7.0, future.cancel)
+
+        def timeout():
+            if not future.done():
+                future.set_exception(TimeoutError("hardware enable result unknown"))
+
+        timer = self.create_timer(7.0, timeout)
         try:
             result = await future
             if result is None or not result.success:
@@ -85,6 +121,8 @@ class ControlNode(Node):
             self.enabling = True
         self.motion.disable()
         try:
+            if request.data:
+                await self._wait_ready(generation)
             await self._hardware(request.data)
             if request.data:
                 if generation != self.generation:

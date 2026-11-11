@@ -1,6 +1,6 @@
 # Wuji ROS 2 遥操与程序控制
 
-独立的 Wuji Hand 2 工程。将整个目录复制到另一台电脑即可部署，不依赖 Li Agent、Franka、GELLO、Workbench 或原参考仓库。当前部署目标是 **Ubuntu 20.04、ROS 2 Foxy、Linux x86-64、Python 3.8**。
+独立的 Wuji Hand 2 工程。将整个目录复制到另一台电脑即可部署，不依赖 Li Agent、Franka、GELLO、Workbench 或原参考仓库。提供 **Ubuntu 20.04 / ROS 2 Foxy / Python 3.8** 和 **Ubuntu 24.04 / ROS 2 Jazzy / Python 3.12** 两套 Linux x86-64 环境。
 
 ## 职责与通信
 
@@ -23,23 +23,37 @@ control 不连接 SDK，retarget 不直接发硬件命令。每只手只有一�
 
 ## Foxy 与 Jazzy
 
-两者的 ROS 2 编程概念和本工程使用的标准消息相近，但运行环境不能互换：Foxy 的系统 Python 是 3.8，Jazzy 的系统 Python 是 3.12，`rclpy` 等二进制扩展必须匹配。这里提供的 Pixi lock 针对 Foxy；不能用它直接加载 Jazzy 的 `rclpy`。跨 ROS 发行版的 DDS 通信也不作为本工程保证，另一台参与控制的 ROS 电脑应使用同一发行版及兼容 RMW。
+两套环境共用驱动、retarget、control 和开关代码；`rclpy` 等系统 ROS 二进制扩展必须与所选 Python 匹配，不能在同一终端叠加两个发行版。
+
+| 系统与 ROS | Pixi 环境 | 构建目录 | ROS 安装目录 | MANUS 桥 |
+| --- | --- | --- | --- | --- |
+| Ubuntu 20.04 / Foxy / Python 3.8 | `default`，现有命令不变 | `build/` | `install/` | `build/manus_bridge/` |
+| Ubuntu 24.04 / Jazzy / Python 3.12 | `jazzy`，使用 `-e jazzy` | `build/jazzy/` | `install/jazzy/` | `build/jazzy/manus_bridge/` |
+
+构建入口会检查 Pixi 环境、`ROS_DISTRO` 和 Python 版本，选错环境会直接报错。日志也按发行版分开。跨 ROS 发行版的 DDS 通信不作为本工程保证，两台参与同一遥操链路的 ROS 电脑应使用同一发行版及兼容 RMW。
 
 原 Li Agent 的 `wuji-sdk==2026.8.31` 不适用于该部署目标。本工程固定 `wuji-sdk==2026.10.12`：官方在这个版本增加了 Python 3.8、Ubuntu 20.04 支持，提供 manylinux2014 wheel，无需复制 SDK 源码或创建额外 SDK 进程。参见 [官方发行说明](https://github.com/wuji-technology/wuji-sdk/releases/tag/v2026.10.12) 和 [PyPI 发行文件](https://pypi.org/project/wuji-sdk/2026.10.12/)。
 
 ## 在另一台电脑部署
 
-先安装系统级 ROS 2 Foxy（至少 `ros-base`）、`sensor_msgs`、`geometry_msgs`、`std_srvs`、`launch_ros` 和 Pixi。Foxy 已结束官方维护；此工程依照用户指定的平台整理。系统 ROS 由操作系统安装，**Python、SDK、retarget、colcon 和 C++ 构建工具全部由根 `pixi.toml`／`pixi.lock` 管理**，不要额外 pip 安装或修改系统 Python。
+先安装与 Ubuntu 版本匹配的系统级 ROS 2（至少 `ros-base`）、`sensor_msgs`、`geometry_msgs`、`std_srvs`、`launch_ros` 和 Pixi。系统 ROS 由操作系统安装，**Python、SDK、retarget、colcon 和 C++ 构建工具全部由根 `pixi.toml`／`pixi.lock` 管理**，不要额外 pip 安装或修改系统 Python。Foxy 已结束官方维护，现有部署继续使用默认环境；Jazzy 用户使用下一节的独立命令。
+
+可以从 GitHub 获取工程：
+
+```bash
+git clone git@github.com:YAnG-0419/wuji-teleop.git
+cd wuji-teleop
+```
 
 从当前电脑打包源码和资源，排除本机环境及构建目录：
 
 ```bash
-tar --exclude=.pixi --exclude=build --exclude=install --exclude=log \
+tar --exclude=.git --exclude=.pixi --exclude=build --exclude=install --exclude=log \
     --exclude=__pycache__ --exclude=.pytest_cache \
     -C /home/descfly/lpy -czf /tmp/wuji-teleop.tar.gz wuji-teleop
 ```
 
-将压缩包复制到目标电脑并解压到任意目录。在目标电脑的工程根目录运行：
+将压缩包复制到目标电脑并解压到任意目录。Foxy 用户在目标电脑的工程根目录运行：
 
 ```bash
 source /opt/ros/foxy/setup.bash
@@ -61,6 +75,59 @@ export ROS_LOCALHOST_ONLY=0
 ```
 
 再用 `pixi run --locked ...` 运行命令。激活脚本保留系统 ROS 的 Python 路径。
+
+## Jazzy 部署与启动
+
+Ubuntu 24.04 安装系统 ROS 2 Jazzy 后，在工程根目录运行：
+
+```bash
+source /opt/ros/jazzy/setup.bash
+pixi install --locked -e jazzy
+pixi run --locked -e jazzy check-sdk
+pixi run --locked -e jazzy build
+pixi run --locked -e jazzy build-manus
+source install/jazzy/setup.bash
+pixi run --locked -e jazzy check-ros
+```
+
+每个运行终端使用同一组环境设置：
+
+```bash
+source /opt/ros/jazzy/setup.bash
+source install/jazzy/setup.bash
+export ROS_DOMAIN_ID=42
+export ROS_LOCALHOST_ONLY=0
+```
+
+终端 A 启动右手 hardware、control 和 retarget（不使能电机）：
+
+```bash
+export WUJI_RIGHT_SERIAL='填写右手实际串号'
+pixi run --locked -e jazzy ros2 launch wuji_control hand.launch.py \
+    side:=right serial:="$WUJI_RIGHT_SERIAL" retarget:=true
+```
+
+终端 B 启动 MANUS 输入；厂商服务和手套要求与下文相同：
+
+```bash
+pixi run --locked -e jazzy ros2 run wuji_teleop wuji-manus --ros-args \
+    -p library:="$PWD/build/jazzy/manus_bridge/libmanus_skeleton_bridge.so"
+```
+
+终端 C 打开遥操开关，输入 `s` 开启、`x` 关闭、`q` 关闭并退出，每次按回车：
+
+```bash
+pixi run --locked -e jazzy python -m wuji_teleop.switch --side right
+```
+
+程序运动示例：
+
+```bash
+pixi run --locked -e jazzy python examples/move_hand.py \
+    --side right --positions /实际路径/target.json --duration 2.0
+```
+
+下文公共接口和行为对两套环境相同；命令示例默认 Foxy，Jazzy 运行时继续使用 `pixi run --locked -e jazzy`，并使用表中的 Jazzy 构建产物路径。
 
 ## 启动硬件与 control
 
@@ -121,7 +188,7 @@ pixi run --locked python -m wuji_teleop.switch off --side right
 
 `on` 执行成功后退出命令，遥操继续运行，直到 `off`、终端开关停止或原有超时机制关闭。`off` 同时请求 control 停止和 hardware 禁用，任一调用失败会返回非零退出码。不要同时操作多个开关实例。
 
-开关复用以下 ROS 服务。开启时先选择遥操来源，再等待硬件使能结果并检查最新实测反馈，然后转发目标：
+开关复用以下 ROS 服务。开启时先选择遥操来源，control 默认最多等待 2 秒取得新鲜目标和反馈（`ready_timeout`），再使能硬件并重新检查反馈，然后转发目标。等待期间可停止或切换来源，迟到的使能结果不会重新开启运动：
 
 ```bash
 pixi run --locked ros2 service call /wuji/right/select_teleop std_srvs/srv/SetBool '{data: true}'
@@ -190,3 +257,16 @@ pixi run --locked check-sdk
 ```
 
 这些命令不连接设备。MANUS 桥的加载检查需要先运行 `build-manus`。实际执行的检查和平台限制见 [验证记录](VALIDATION.md)。复制来源和修改范围见 [SOURCES.json](SOURCES.json)，许可证见 `licenses/` 及 MANUS SDK 随附文件。
+
+Jazzy 检查入口：
+
+```bash
+pixi run --locked -e jazzy test
+pixi run --locked -e jazzy check-sdk
+source /opt/ros/jazzy/setup.bash
+source install/jazzy/setup.bash
+pixi run --locked -e jazzy check-ros
+pixi run --locked -e jazzy test-ros
+```
+
+`test-ros` 使用本机独立 ROS domain 191 和合成硬件服务、反馈及关键点，验证 retarget → control → ROS 命令、开关启停和输入超时；它不启动 hardware 驱动或连接 SDK 设备，也不代表真机验收。

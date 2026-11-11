@@ -47,13 +47,16 @@ class Motion:
     def _fresh(self, timestamp, now):
         return timestamp is not None and 0 <= now - timestamp <= self.timeout
 
-    def enable(self, now):
+    def check_ready(self, now):
         if not self._fresh(self.feedback_at, now):
             raise RuntimeError("fresh measured feedback required")
         target = self.targets.get(self.source)
         if target is None or not self._fresh(target[1], now):
             raise RuntimeError("fresh selected target required")
         self._vector(self.feedback, bounded=True)
+
+    def enable(self, now):
+        self.check_ready(now)
         self.output = self.feedback
         self.last_at = now
         self.enabled = True

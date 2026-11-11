@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [[ "${ROS_DISTRO:-}" != foxy ]]; then
-    echo '请先在干净终端 source /opt/ros/foxy/setup.bash；当前工程固定使用 Foxy/Python 3.8。' >&2
-    exit 1
-fi
-python -c 'import sys; assert sys.version_info[:2] == (3, 8); import rclpy, ament_index_python'
-exec colcon build --base-paths hardware control teleop --symlink-install --executor sequential
+python tools/check_ros.py --base-only
+exec colcon --log-base "$WUJI_LOG_BASE" build \
+    --base-paths hardware control teleop --symlink-install --executor sequential \
+    --build-base "$WUJI_BUILD_BASE" --install-base "$WUJI_INSTALL_BASE"

@@ -1,4 +1,5 @@
 from pathlib import Path
+import os
 from types import SimpleNamespace
 
 import numpy as np
@@ -46,7 +47,7 @@ def test_wire_joint_names_are_explicit_and_reordered():
 
 def test_manus_native_bridge_loads_without_connecting():
     from wuji_teleop.manus import ManusBridge
-    library = ROOT / "build/manus_bridge/libmanus_skeleton_bridge.so"
+    library = ROOT / os.environ.get("WUJI_BUILD_BASE", "build") / "manus_bridge/libmanus_skeleton_bridge.so"
     if not library.is_file():
         pytest.skip("run pixi run --locked build-manus to check the optional bridge")
     bridge = ManusBridge(library)
